@@ -1,0 +1,19 @@
+# Ignore build/report folders
+/reports/
+/*_project/
+
+# Ignore Vivado log files
+*.jou
+*.log
+*.str
+*.pb
+*.xml
+
+# Ignore Python cache and virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# OS-specific system files
+.DS_Store
+Thumbs.db
