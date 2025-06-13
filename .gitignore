@@ -1,6 +1,8 @@
 # Ignore build/report folders
 /reports/
 /*_project/
+/constraints/
+/plots/
 
 # Ignore Vivado log files
 *.jou
