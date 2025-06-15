@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # VLSI Design Compiler Automation + Visualization Project
 
 ## Components:
@@ -12,25 +13,15 @@
 - `plots/` - Graphs and visuals
 
 ## How to Use:
-1. Generate SDC:
-   ```
-   python scripts/sdc_generator.py
-   ```
+1. run the run_synthesis.py file
 
-2. Run synthesis using your EDA tool (DC or Vivado)
-
-3. Parse reports:
-   ```
-   python scripts/parse_reports.py
-   ```
-
-4. Visualize:
-   ```
-   python scripts/plot_utilization.py
-   ```
+2. the results stored is 
 
 ## Requirements:
 - Python 3.x
 - Jinja2
 - Pandas
 - Matplotlib
+=======
+# vlsi_dc_automation
+>>>>>>> f552a587c6fb2aa6fa61bfa39e6a115fd6a9793a

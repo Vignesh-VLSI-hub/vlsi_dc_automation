@@ -5,11 +5,11 @@ import shutil
 import platform
 from datetime import datetime
 
-# === Display OS ===
+# === Display OS === 
 detected_os = platform.system()
 print(f"[🧠 SYSTEM] Detected OS: {detected_os}")
 
-# === Vivado Path ===
+# === Vivado Path === change it if you needed
 vivado_path = os.environ.get(
     "VIVADO_PATH",
     r"D:\xilinx\Vivado\2023.1\bin\vivado.bat" if detected_os == "Windows" else "/opt/Xilinx/Vivado/2023.1/bin/vivado"
