@@ -2,7 +2,7 @@ import pandas as pd
 import re
 import os
 
-def parse_utilization():
+def parse_utilization(module="unknown"):
     path = "reports/synthesis_summary.txt"
     data = {"Module": [], "LUTs": [], "FFs": []}
 
@@ -25,7 +25,7 @@ def parse_utilization():
                 ff = int(match[0])
 
     if lut is not None and ff is not None:
-        data["Module"].append("counter")  # Update this if your module name changes
+        data["Module"].append(module if module else "unknown")  # Update this if your module name changes
         data["LUTs"].append(lut)
         data["FFs"].append(ff)
         df = pd.DataFrame(data)
