@@ -1,12 +1,10 @@
 designs:
-  - name: counter
-    clock_port: clk
+  - clock_port: clk
     clock_period: 10.0
     input_delay: 2.0
     output_delay: 2.0
 
-  - name: mux2
-    clock_port: clk
-    clock_period: 8.0
-    input_delay: 1.5
-    output_delay: 1.5
+  - clock_port: clk
+    clock_period: 5.0
+    input_delay: 1.0
+    output_delay: 1.0

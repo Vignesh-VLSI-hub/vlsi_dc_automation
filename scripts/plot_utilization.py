@@ -1,5 +1,3 @@
-# scripts/plot_utilization.py
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
@@ -11,17 +9,18 @@ def plot_chart():
         return
 
     df = pd.read_csv(csv_path)
-    plt.figure(figsize=(6,4))
+    if df.empty:
+        print("⚠️ CSV is empty.")
+        return
+
+    plt.figure(figsize=(8, 5))
     plt.bar(df["Module"], df["LUTs"], label="LUTs")
     plt.bar(df["Module"], df["FFs"], bottom=df["LUTs"], label="FFs")
-    plt.title("Utilization Report")
+    plt.title("Utilization Chart")
     plt.ylabel("Resource Count")
+    plt.xlabel("Modules")
     plt.legend()
     plt.tight_layout()
-
     os.makedirs("plots", exist_ok=True)
     plt.savefig("plots/utilization_chart.png")
-    plt.close()
-
-if __name__ == "__main__":
-    plot_chart()
+    plt.show()

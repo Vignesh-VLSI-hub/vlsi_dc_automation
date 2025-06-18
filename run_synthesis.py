@@ -17,13 +17,13 @@ vivado_path = os.environ.get(
 )
 
 if not os.path.exists(vivado_path):
-    print(f"❌ Vivado not found at: {vivado_path}")
+    print(f"\n❌ Vivado not found at: {vivado_path}")
     sys.exit(1)
 
 # === Load Configuration ===
 config_file = "design_config.yaml"
 if not os.path.exists(config_file):
-    print(f"❌ Config file not found: {config_file}")
+    print(f"\n❌ Config file not found: {config_file}")
     sys.exit(1)
 
 with open(config_file) as f:
@@ -46,9 +46,10 @@ for file in files_to_delete:
 
 os.makedirs("reports", exist_ok=True)
 
-# === Process each design ===
+# === Get Verilog Files ===
 rtl_files = sorted([f for f in os.listdir("rtl") if f.endswith(".v")])
 
+# === Synthesis for each design ===
 for i, design in enumerate(designs):
     try:
         rtl_index = i if i < len(rtl_files) else 0
@@ -56,6 +57,7 @@ for i, design in enumerate(designs):
         top_module = os.path.splitext(os.path.basename(design_file))[0]
         print(f"\n🔁 Synthesizing: {design_file} as top module '{top_module}'")
 
+        # === Generate SDC ===
         from scripts import sdc_generator
         sdc_generator.generate_sdc(
             clk_name=design["clock_port"],
@@ -65,11 +67,11 @@ for i, design in enumerate(designs):
             output_delay=design["output_delay"]
         )
 
-        # Run Vivado
+        # === Run Vivado ===
         tcl_script = "run_synthesis.tcl"
         log_file = f"reports/vivado_run_{top_module}.log"
-
         print("[🚀 INFO] Launching Vivado...")
+
         with open(log_file, "w", encoding="utf-8", errors="replace") as f:
             process = subprocess.Popen(
                 [vivado_path, "-mode", "batch", "-source", tcl_script],
@@ -83,7 +85,7 @@ for i, design in enumerate(designs):
                 f.write(line)
             process.wait()
 
-        # Git info
+        # === Add Git Info ===
         summary_path = "reports/synthesis_summary.txt"
         try:
             commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
@@ -96,7 +98,7 @@ for i, design in enumerate(designs):
                 f.write(f"\n📅 Build Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 f.write(f"\n💻 Platform: {detected_os}\n")
 
-        # Extract Summary
+        # === Summary Output ===
         def extract_summary(path, keyword):
             if not os.path.exists(path):
                 return "N/A"
@@ -113,13 +115,14 @@ for i, design in enumerate(designs):
         print("FF Usage:     ", extract_summary(summary_path, "Slice Registers"))
         print("Power (Dyn.): ", extract_summary(summary_path, "Dynamic"))
 
+        # === Parse Report ===
         from scripts import parse_reports
         parse_reports.parse_utilization(module=top_module)
 
     except Exception as e:
         print(f"❌ Error during synthesis for {top_module}: {e}")
 
-# === Plot at the end ===
+# === Plot Chart ===
 try:
     from scripts import plot_utilization
     plot_utilization.plot_chart()

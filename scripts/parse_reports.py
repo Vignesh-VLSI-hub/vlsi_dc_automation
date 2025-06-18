@@ -1,38 +1,35 @@
-import pandas as pd
-import re
 import os
+import pandas as pd
 
 def parse_utilization(module="unknown"):
-    path = "reports/synthesis_summary.txt"
     data = {"Module": [], "LUTs": [], "FFs": []}
+    summary_path = "reports/synthesis_summary.txt"
 
-    if not os.path.exists(path):
-        print(f"❌ Report file not found: {path}")
+    if not os.path.exists(summary_path):
+        print(f"⚠️ Summary report not found: {summary_path}")
         return
 
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
+    with open(summary_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
+        for i, line in enumerate(lines):
+            if "Slice LUTs*" in line:
+                try:
+                    data["LUTs"].append(int(line.split("|")[2].strip()))
+                except:
+                    data["LUTs"].append(0)
+            if "Slice Registers" in line:
+                try:
+                    data["FFs"].append(int(line.split("|")[2].strip()))
+                except:
+                    data["FFs"].append(0)
 
-    lut = ff = None
-    for line in lines:
-        if "Slice LUTs" in line:
-            match = re.findall(r"\|\s+(\d+)\s+\|", line)
-            if match:
-                lut = int(match[0])
-        elif "Slice Registers" in line:
-            match = re.findall(r"\|\s+(\d+)\s+\|", line)
-            if match:
-                ff = int(match[0])
+    data["Module"].append(module)
 
-    if lut is not None and ff is not None:
-        data["Module"].append(module if module else "unknown")  # Update this if your module name changes
-        data["LUTs"].append(lut)
-        data["FFs"].append(ff)
-        df = pd.DataFrame(data)
-        df.to_csv("reports/util_summary.csv", index=False)
-        print(df)
+    # Append to or create CSV
+    csv_path = "reports/util_summary.csv"
+    df = pd.DataFrame(data)
+    if os.path.exists(csv_path):
+        df.to_csv(csv_path, mode="a", index=False, header=False)
     else:
-        print("⚠️ Could not parse LUT or FF from summary report.")
-
-if __name__ == "__main__":
-    parse_utilization()
+        df.to_csv(csv_path, index=False)
+    print(f"✅ Utilization parsed for module: {module}")
