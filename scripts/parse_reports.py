@@ -1,35 +1,48 @@
-import os
 import pandas as pd
+import os
+import re
 
-def parse_utilization(module="unknown"):
-    data = {"Module": [], "LUTs": [], "FFs": []}
-    summary_path = "reports/synthesis_summary.txt"
-
-    if not os.path.exists(summary_path):
-        print(f"⚠️ Summary report not found: {summary_path}")
+def parse_utilization(module="module"):
+    file = "reports/synthesis_summary.txt"
+    if not os.path.exists(file):
+        print("❌ synthesis_summary.txt not found.")
         return
 
-    with open(summary_path, "r", encoding="utf-8") as f:
+    with open(file, encoding="utf-8", errors="ignore") as f:
         lines = f.readlines()
-        for i, line in enumerate(lines):
-            if "Slice LUTs*" in line:
-                try:
-                    data["LUTs"].append(int(line.split("|")[2].strip()))
-                except:
-                    data["LUTs"].append(0)
-            if "Slice Registers" in line:
-                try:
-                    data["FFs"].append(int(line.split("|")[2].strip()))
-                except:
-                    data["FFs"].append(0)
 
-    data["Module"].append(module)
+    summary = {
+        "Module": module,
+        "Slack": "N/A",
+        "Delay": "N/A",
+        "Power": "N/A",
+        "LUTs": "N/A",
+        "FFs": "N/A"
+    }
 
-    # Append to or create CSV
-    csv_path = "reports/util_summary.csv"
-    df = pd.DataFrame(data)
-    if os.path.exists(csv_path):
-        df.to_csv(csv_path, mode="a", index=False, header=False)
-    else:
-        df.to_csv(csv_path, index=False)
-    print(f"✅ Utilization parsed for module: {module}")
+    for line in lines:
+        if "Worst Slack" in line:
+            match = re.search(r"(-?\d+\.\d+)ns", line)
+            if match:
+                summary["Slack"] = match.group(1)
+        elif "Data Path Delay" in line:
+            match = re.search(r"Data Path Delay:\s+(\d+\.\d+)", line)
+            if match:
+                summary["Delay"] = match.group(1)
+        elif "Dynamic (W)" in line:
+            match = re.search(r"Dynamic \(W\)\s+\|\s+([\d\.]+)", line)
+            if match:
+                summary["Power"] = match.group(1)
+        elif "Slice LUTs" in line:
+            match = re.findall(r"\|\s+(\d+)\s+\|", line)
+            if match:
+                summary["LUTs"] = match[0]
+        elif "Slice Registers" in line:
+            match = re.findall(r"\|\s+(\d+)\s+\|", line)
+            if match:
+                summary["FFs"] = match[0]
+
+    df = pd.DataFrame([summary])
+    df.to_csv("reports/util_summary.csv", index=False)
+    print("[🧮 PARSED SUMMARY]")
+    print(df)
