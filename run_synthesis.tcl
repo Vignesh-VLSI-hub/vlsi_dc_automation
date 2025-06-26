@@ -1,32 +1,33 @@
 # ===============================
 # Smart Vivado Synthesis Script
-# All-in-One Report Generator
+# Single File Accurate Execution
 # ===============================
 
 # Step 1: Create reports folder
 file mkdir reports
 
-# Step 2: Detect Verilog source files
-set verilog_files [glob rtl/*.v]
+# Step 2: Read selected file path from Python
+set fp [open "selected_file.txt" r]
+set selected_file_path [gets $fp]
+close $fp
 
-if {[llength $verilog_files] == 0} {
-    puts "❌ ERROR: No Verilog file found in rtl/ folder."
+# Validate file
+if {![file exists $selected_file_path]} {
+    puts "❌ ERROR: RTL file not found: $selected_file_path"
     exit 1
 }
 
-# Step 3: Extract top module name from first .v file
-# (Fixes the 'count' bug by stripping only `.v` at the end)
-set top_module [regsub {\.v$} [file tail [lindex $verilog_files 0]] ""]
+# Step 3: Extract top module name
+set top_module [regsub {\.v$} [file tail $selected_file_path] ""]
+
 puts "🧠 Top module detected: $top_module"
 
-# Step 4: Create Vivado project
+# Step 4: Create project
 create_project ${top_module}_project ./${top_module}_project -part xc7z020clg400-1 -force
 
-# Step 5: Read all Verilog sources
-foreach file $verilog_files {
-    puts "📂 Adding $file"
-    read_verilog $file
-}
+# Step 5: Read selected Verilog file
+puts "📂 Adding RTL file: $selected_file_path"
+read_verilog $selected_file_path
 
 # Step 6: Read constraints if available
 if {[file exists constraints/generated.sdc]} {
@@ -36,11 +37,11 @@ if {[file exists constraints/generated.sdc]} {
     puts "⚠️  No constraint file found. Proceeding without SDC."
 }
 
-# Step 7: Run synthesis
+# Step 7: Synthesis
 puts "🛠️  Running synthesis..."
 synth_design -top $top_module
 
-# Step 8: Create a single, consolidated summary report
+# Step 8: Report summary
 set summary_path "reports/synthesis_summary.txt"
 set fp [open $summary_path w]
 
@@ -50,15 +51,15 @@ puts $fp "Target Part      : xc7z020clg400-1"
 puts $fp "Generated On     : [clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S}]"
 puts $fp "--------------------------------------------"
 
-# Resource utilization
+# Utilization
 puts $fp "\n▶️ SYNTHESIS UTILIZATION"
 puts $fp [report_utilization -return_string]
 
-# Optional: hierarchical breakdown
+# Hierarchical breakdown
 puts $fp "\n🔧 CELL BREAKDOWN"
 puts $fp [report_utilization -hierarchical -return_string]
 
-# Clocking report
+# Clock info
 puts $fp "\n🕒 CLOCK UTILIZATION"
 puts $fp [report_clock_utilization -return_string]
 
@@ -66,11 +67,11 @@ puts $fp [report_clock_utilization -return_string]
 puts $fp "\n⏱️ TIMING SUMMARY"
 puts $fp [report_timing_summary -return_string]
 
-# Worst slack path
+# Worst path
 puts $fp "\n⛓️ WORST SLACK PATH"
 puts $fp [report_timing -max_paths 1 -sort_by slack -delay_type max -path_type summary -return_string]
 
-# Power estimate
+# Power
 puts $fp "\n⚡ POWER ESTIMATION"
 puts $fp [report_power -return_string]
 

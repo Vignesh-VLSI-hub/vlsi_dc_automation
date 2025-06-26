@@ -5,17 +5,16 @@ import os
 def plot_chart():
     csv_file = "reports/util_summary.csv"
     if not os.path.exists(csv_file):
-        print("❌ util_summary.csv not found.")
+        print("\u274c util_summary.csv not found.")
         return
 
     df = pd.read_csv(csv_file, encoding="utf-8")
-    
     metrics = ["Slack", "Delay", "Power", "LUTs", "FFs"]
 
     try:
         values = [float(df[m].iloc[0]) for m in metrics]
     except ValueError:
-        print("⚠️ Error: One or more values in the CSV are not numeric.")
+        print("\u26a0\ufe0f Error: One or more values in the CSV are not numeric.")
         print(df)
         return
 
@@ -29,17 +28,17 @@ def plot_chart():
 
     for bar in bars:
         yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, yval + 0.05, f"{yval:.2f}", ha="center")
+        plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.05, f"{yval:.2f}", ha="center")
 
     plt.tight_layout()
     plt.savefig("plots/synthesis_plot.png")
-    plt.show()
+    plt.close()
 
-    # === Plot 2: 100% Stacked Bar Chart (Relative) ===
+    # === Plot 2: 100% Stacked Bar Chart ===
     plt.figure(figsize=(8, 5))
     total = sum(values)
     if total == 0:
-        print("⚠️ Cannot generate percentage chart: Total value is zero.")
+        print("\u26a0\ufe0f Cannot generate percentage chart: Total value is zero.")
         return
 
     percentages = [(v / total) * 100 for v in values]
@@ -57,4 +56,6 @@ def plot_chart():
     plt.ylim(0, 110)
     plt.tight_layout()
     plt.savefig("plots/synthesis_percent.png")
-    plt.show()
+    plt.close()
+
+    print("\n[\u2705 PLOTS SAVED] synthesis_plot.png and synthesis_percent.png")

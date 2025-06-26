@@ -3,6 +3,7 @@ import sys
 import subprocess
 import shutil
 import platform
+import glob
 from datetime import datetime
 from scripts import sdc_generator, parse_reports, plot_utilization
 
@@ -32,6 +33,12 @@ for file in files:
         print(f"[🧹 CLEANUP] Deleting file: {file}")
         os.remove(file)
 
+# Also clean intermediate Vivado folders
+for pattern in ["*_project", ".Xil", ".cache"]:
+    for f in glob.glob(pattern):
+        print(f"[🧹 CLEANUP] Deleting: {f}")
+        shutil.rmtree(f, ignore_errors=True)
+
 os.makedirs("reports", exist_ok=True)
 os.makedirs("plots", exist_ok=True)
 
@@ -55,6 +62,10 @@ except (ValueError, IndexError):
 top_module = os.path.splitext(selected_file)[0]
 print(f"\n🔁 Synthesizing: {selected_file} as top module '{top_module}'")
 
+# Save selected file path for TCL to use
+with open("selected_file.txt", "w") as f:
+    f.write(os.path.join("rtl", selected_file))
+
 # === Generate SDC ===
 sdc_generator.generate_sdc(
     clk_name="clk", clk_period=10.0,
@@ -75,7 +86,7 @@ with open("vivado_run.log", "w", encoding="utf-8", errors="replace") as f:
     process.wait()
 
 # === Add Git info to report ===
-summary_path = "reports/synthesis_summary.txt"
+summary_path = f"reports/synthesis_summary_{top_module}.txt"
 try:
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
 except Exception:
