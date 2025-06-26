@@ -57,8 +57,8 @@ print(f"\n🔁 Synthesizing: {selected_file} as top module '{top_module}'")
 
 # === Generate SDC ===
 sdc_generator.generate_sdc(
-    clk_name="clk", clk_period=5.0,
-    clk_port="clk", input_delay=1.0, output_delay=1.0
+    clk_name="clk", clk_period=10.0,
+    clk_port="clk", input_delay=5.0, output_delay=5.0
 )
 
 # === Run Vivado ===
