@@ -5,7 +5,7 @@ import os
 def plot_chart():
     csv_file = "reports/util_summary.csv"
     if not os.path.exists(csv_file):
-        print("\u274c util_summary.csv not found.")
+        print("❌ util_summary.csv not found.")
         return
 
     df = pd.read_csv(csv_file, encoding="utf-8")
@@ -14,7 +14,7 @@ def plot_chart():
     try:
         values = [float(df[m].iloc[0]) for m in metrics]
     except ValueError:
-        print("\u26a0\ufe0f Error: One or more values in the CSV are not numeric.")
+        print("⚠️ Error: One or more values in the CSV are not numeric.")
         print(df)
         return
 
@@ -31,18 +31,19 @@ def plot_chart():
         plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.05, f"{yval:.2f}", ha="center")
 
     plt.tight_layout()
-    plt.savefig("plots/synthesis_plot.png")
+    bar_path = "plots/synthesis_plot.png"
+    plt.savefig(bar_path)
     plt.close()
 
     # === Plot 2: 100% Stacked Bar Chart ===
     plt.figure(figsize=(8, 5))
     total = sum(values)
     if total == 0:
-        print("\u26a0\ufe0f Cannot generate percentage chart: Total value is zero.")
+        print("⚠️ Cannot generate percentage chart: Total value is zero.")
         return
 
     percentages = [(v / total) * 100 for v in values]
-    plt.bar([module_name], [100], color="lightgray")  # base bar
+    plt.bar([module_name], [100], color="lightgray")
 
     bottom = 0
     colors = ["#4B8BBE", "#306998", "#FFE873", "#FFD43B", "#646464"]
@@ -55,7 +56,41 @@ def plot_chart():
     plt.legend(loc="upper right")
     plt.ylim(0, 110)
     plt.tight_layout()
-    plt.savefig("plots/synthesis_percent.png")
+    percent_path = "plots/synthesis_percent.png"
+    plt.savefig(percent_path)
     plt.close()
 
-    print("\n[\u2705 PLOTS SAVED] synthesis_plot.png and synthesis_percent.png")
+    print("\n[✅ PLOTS SAVED] synthesis_plot.png and synthesis_percent.png")
+
+# === Called by GUI to get path of saved plots ===
+def get_chart():
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import os
+
+    csv_file = "reports/util_summary.csv"
+    if not os.path.exists(csv_file):
+        print("❌ util_summary.csv not found.")
+        return None
+
+    df = pd.read_csv(csv_file, encoding="utf-8")
+    module_name = df["Module"].iloc[0]
+    metrics = ["Slack", "Delay", "Power", "LUTs", "FFs"]
+    values = [float(df[m].iloc[0]) for m in metrics]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    bars = ax.bar(metrics, values, color=["#4B8BBE", "#306998", "#FFE873", "#FFD43B", "#646464"])
+    ax.set_title(f"Synthesis Metrics: {module_name}")
+    ax.set_ylabel("Value")
+
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.05, f"{yval:.2f}", ha="center")
+
+    # ✅ Save the plot image
+    os.makedirs("plots", exist_ok=True)
+    plot_path = f"plots/synthesis_plot_{module_name}.png"
+    fig.savefig(plot_path)
+
+    return fig
+

@@ -3,9 +3,15 @@ import os
 import re
 
 def parse_utilization(module="module"):
-    file = "reports/synthesis_summary.txt"
-    if not os.path.exists(file):
-        print("❌ synthesis_summary.txt not found.")
+    summary_file = f"reports/synthesis_summary_{module}.txt"
+    fallback_file = "reports/synthesis_summary.txt"
+
+    if os.path.exists(summary_file):
+        file = summary_file
+    elif os.path.exists(fallback_file):
+        file = fallback_file
+    else:
+        print("❌ synthesis_summary file not found.")
         return
 
     with open(file, encoding="utf-8", errors="ignore") as f:
@@ -22,7 +28,7 @@ def parse_utilization(module="module"):
 
     for line in lines:
         if "Worst Slack" in line:
-            match = re.search(r"(-?\d+\.\d+)ns", line)
+            match = re.search(r"(-?\d+\.\d+)\s*ns", line)
             if match:
                 summary["Slack"] = match.group(1)
         elif "Data Path Delay" in line:
@@ -46,3 +52,9 @@ def parse_utilization(module="module"):
     df.to_csv("reports/util_summary.csv", index=False)
     print("[🧮 PARSED SUMMARY]")
     print(df)
+    return df
+
+# ✅ Required by GUI: reads latest summary CSV
+def get_latest_summary():
+    df = pd.read_csv("reports/util_summary.csv")
+    return df.iloc[0].to_dict()
