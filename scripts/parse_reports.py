@@ -1,17 +1,12 @@
+# === parse_reports.py ===
 import pandas as pd
 import os
 import re
 
 def parse_utilization(module="module"):
-    summary_file = f"reports/synthesis_summary_{module}.txt"
-    fallback_file = "reports/synthesis_summary.txt"
-
-    if os.path.exists(summary_file):
-        file = summary_file
-    elif os.path.exists(fallback_file):
-        file = fallback_file
-    else:
-        print("❌ synthesis_summary file not found.")
+    file = "reports/synthesis_summary.txt"
+    if not os.path.exists(file):
+        print("\u274c synthesis_summary.txt not found.")
         return
 
     with open(file, encoding="utf-8", errors="ignore") as f:
@@ -23,12 +18,15 @@ def parse_utilization(module="module"):
         "Delay": "N/A",
         "Power": "N/A",
         "LUTs": "N/A",
-        "FFs": "N/A"
+        "FFs": "N/A",
+        "DSPs": "N/A",
+        "BRAM": "N/A",
+        "IO": "N/A"
     }
 
     for line in lines:
         if "Worst Slack" in line:
-            match = re.search(r"(-?\d+\.\d+)\s*ns", line)
+            match = re.search(r"(-?\d+\.\d+)ns", line)
             if match:
                 summary["Slack"] = match.group(1)
         elif "Data Path Delay" in line:
@@ -47,14 +45,24 @@ def parse_utilization(module="module"):
             match = re.findall(r"\|\s+(\d+)\s+\|", line)
             if match:
                 summary["FFs"] = match[0]
+        elif "DSPs" in line:
+            match = re.findall(r"\|\s+(\d+)\s+\|", line)
+            if match:
+                summary["DSPs"] = match[0]
+        elif "RAMB" in line or "BRAM" in line:
+            match = re.findall(r"\|\s+(\d+)\s+\|", line)
+            if match:
+                summary["BRAM"] = match[0]
+        elif "IO Buffers" in line:
+            match = re.findall(r"\|\s+(\d+)\s+\|", line)
+            if match:
+                summary["IO"] = match[0]
 
     df = pd.DataFrame([summary])
     df.to_csv("reports/util_summary.csv", index=False)
-    print("[🧮 PARSED SUMMARY]")
+    print("[\U0001f9ee PARSED SUMMARY]")
     print(df)
-    return df
 
-# ✅ Required by GUI: reads latest summary CSV
 def get_latest_summary():
     df = pd.read_csv("reports/util_summary.csv")
     return df.iloc[0].to_dict()

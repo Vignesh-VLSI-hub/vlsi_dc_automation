@@ -1,96 +1,115 @@
+# === plot_utilization.py ===
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import os
+import matplotlib
+matplotlib.use('Agg')
 
 def plot_chart():
     csv_file = "reports/util_summary.csv"
+    plot_dir = "plots"
+
     if not os.path.exists(csv_file):
         print("❌ util_summary.csv not found.")
         return
 
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+        print("📁 'plots/' folder created.")
+
     df = pd.read_csv(csv_file, encoding="utf-8")
-    metrics = ["Slack", "Delay", "Power", "LUTs", "FFs"]
+    metrics = ["Slack", "Delay", "Power", "LUTs", "FFs", "DSPs", "BRAM", "IO"]
+    module_name = df["Module"].iloc[0]
+
+    try:
+        values = [float(df[m].iloc[0]) for m in metrics]
+    except Exception as e:
+        print(f"⚠️ Error reading metric values: {e}")
+        print(df)
+        return
+
+    # Plot 1: Bar chart
+    try:
+        plt.figure(figsize=(10, 5))
+        colors = sns.color_palette("viridis", len(metrics))
+        bars = plt.bar(metrics, values, color=colors)
+        plt.title(f"Synthesis Metrics for {module_name}")
+        plt.ylabel("Values")
+
+        for bar in bars:
+            yval = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.05, f"{yval:.2f}", ha="center")
+
+        bar_path = os.path.join(plot_dir, "synthesis_plot.png")
+        plt.tight_layout()
+        plt.savefig(bar_path)
+        plt.close()
+        print(f"✅ Saved bar chart: {bar_path}")
+    except Exception as e:
+        print(f"❌ Failed to save bar chart: {e}")
+
+    # Plot 2: Percent chart
+    try:
+        total = sum(values)
+        if total > 0:
+            percents = [(v / total) * 100 for v in values]
+            plt.figure(figsize=(10, 5))
+            plt.bar(metrics, percents, color=colors)
+            plt.title(f"Metric Distribution (%) - {module_name}")
+            plt.ylabel("Percentage")
+
+            for i, p in enumerate(percents):
+                plt.text(i, p + 0.5, f"{p:.1f}%", ha="center")
+
+            percent_path = os.path.join(plot_dir, "synthesis_percent.png")
+            plt.tight_layout()
+            plt.savefig(percent_path)
+            plt.close()
+            print(f"✅ Saved percentage chart: {percent_path}")
+    except Exception as e:
+        print(f"❌ Failed to save percentage chart: {e}")
+
+    # Plot 3: Heatmap
+    try:
+        heat_df = pd.DataFrame([values], columns=metrics, index=[module_name])
+        plt.figure(figsize=(10, 1.5))
+        sns.heatmap(heat_df, annot=True, cmap="coolwarm", cbar=False, fmt=".2f")
+        plt.title("Metric Heatmap")
+        plt.yticks(rotation=0)
+
+        heatmap_path = os.path.join(plot_dir, "synthesis_heatmap.png")
+        plt.tight_layout()
+        plt.savefig(heatmap_path)
+        plt.close()
+        print(f"✅ Saved heatmap: {heatmap_path}")
+    except Exception as e:
+        print(f"❌ Failed to save heatmap: {e}")
+
+def get_chart():
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+    csv_file = "reports/util_summary.csv"
+    if not os.path.exists(csv_file):
+        print("\u274c util_summary.csv not found.")
+        return Figure()
+
+    df = pd.read_csv(csv_file, encoding="utf-8")
+    metrics = ["Slack", "Delay", "Power", "LUTs", "FFs", "DSPs", "BRAM", "IO"]
+    module_name = df["Module"].iloc[0]
 
     try:
         values = [float(df[m].iloc[0]) for m in metrics]
     except ValueError:
-        print("⚠️ Error: One or more values in the CSV are not numeric.")
-        print(df)
-        return
-
-    module_name = df["Module"].iloc[0]
-
-    # === Plot 1: Basic Bar Chart ===
-    plt.figure(figsize=(8, 5))
-    bars = plt.bar(metrics, values, color=["#4B8BBE", "#306998", "#FFE873", "#FFD43B", "#646464"])
-    plt.title(f"Synthesis Metrics: {module_name}")
-    plt.ylabel("Value")
-
-    for bar in bars:
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.05, f"{yval:.2f}", ha="center")
-
-    plt.tight_layout()
-    bar_path = "plots/synthesis_plot.png"
-    plt.savefig(bar_path)
-    plt.close()
-
-    # === Plot 2: 100% Stacked Bar Chart ===
-    plt.figure(figsize=(8, 5))
-    total = sum(values)
-    if total == 0:
-        print("⚠️ Cannot generate percentage chart: Total value is zero.")
-        return
-
-    percentages = [(v / total) * 100 for v in values]
-    plt.bar([module_name], [100], color="lightgray")
-
-    bottom = 0
-    colors = ["#4B8BBE", "#306998", "#FFE873", "#FFD43B", "#646464"]
-    for idx, perc in enumerate(percentages):
-        plt.bar([module_name], [perc], bottom=bottom, label=f"{metrics[idx]} ({perc:.1f}%)", color=colors[idx])
-        bottom += perc
-
-    plt.title(f"Proportional Distribution: {module_name}")
-    plt.ylabel("Percentage (%)")
-    plt.legend(loc="upper right")
-    plt.ylim(0, 110)
-    plt.tight_layout()
-    percent_path = "plots/synthesis_percent.png"
-    plt.savefig(percent_path)
-    plt.close()
-
-    print("\n[✅ PLOTS SAVED] synthesis_plot.png and synthesis_percent.png")
-
-# === Called by GUI to get path of saved plots ===
-def get_chart():
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import os
-
-    csv_file = "reports/util_summary.csv"
-    if not os.path.exists(csv_file):
-        print("❌ util_summary.csv not found.")
-        return None
-
-    df = pd.read_csv(csv_file, encoding="utf-8")
-    module_name = df["Module"].iloc[0]
-    metrics = ["Slack", "Delay", "Power", "LUTs", "FFs"]
-    values = [float(df[m].iloc[0]) for m in metrics]
+        values = [0] * len(metrics)
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    bars = ax.bar(metrics, values, color=["#4B8BBE", "#306998", "#FFE873", "#FFD43B", "#646464"])
-    ax.set_title(f"Synthesis Metrics: {module_name}")
-    ax.set_ylabel("Value")
+    bars = ax.bar(metrics, values, color=sns.color_palette("coolwarm", len(metrics)))
+    ax.set_title(f"Synthesis Metrics for {module_name}")
+    ax.set_ylabel("Values")
 
     for bar in bars:
         yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.05, f"{yval:.2f}", ha="center")
-
-    # ✅ Save the plot image
-    os.makedirs("plots", exist_ok=True)
-    plot_path = f"plots/synthesis_plot_{module_name}.png"
-    fig.savefig(plot_path)
+        ax.text(bar.get_x() + bar.get_width()/2, yval + 0.05, f"{yval:.2f}", ha="center", fontsize=8)
 
     return fig
-
