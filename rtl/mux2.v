@@ -1,8 +1,9 @@
-module mux2to1 (
-    input a,
-    input b,
-    input sel,
-    output y
+module mux2 (
+  input clk,
+  input sel,
+  input a, b,
+  output reg y
 );
-    assign y = sel ? b : a;
+  always @(posedge clk)
+    y <= sel ? a : b;
 endmodule

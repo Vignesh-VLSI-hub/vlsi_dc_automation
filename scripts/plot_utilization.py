@@ -113,3 +113,30 @@ def get_chart():
         ax.text(bar.get_x() + bar.get_width()/2, yval + 0.05, f"{yval:.2f}", ha="center", fontsize=8)
 
     return fig
+def save_individual_metric_charts():
+    csv_file = "reports/util_summary.csv"
+    if not os.path.exists(csv_file):
+        print("❌ CSV not found for individual metrics.")
+        return
+
+    df = pd.read_csv(csv_file)
+    metrics = ["Slack", "Delay", "Power", "LUTs", "FFs", "DSPs", "BRAM", "IO"]
+    module = df["Module"].iloc[0]
+
+    for metric in metrics:
+        if metric not in df.columns:
+            continue
+        try:
+            value = float(df[metric].iloc[0])
+        except:
+            continue
+        fig, ax = plt.subplots()
+        ax.bar([metric], [value], color="skyblue")
+        ax.set_title(f"{metric} for {module}")
+        ax.set_ylabel("Value")
+        for bar in ax.patches:
+            ax.annotate(f"{value:.2f}", (bar.get_x() + 0.1, bar.get_height() + 0.05))
+        plt.tight_layout()
+        plt.savefig(f"plots/metric_{metric.lower()}.png")
+        plt.close()
+

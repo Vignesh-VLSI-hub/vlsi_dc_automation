@@ -2,7 +2,7 @@
 import pandas as pd
 import os
 import re
-
+import datetime
 def parse_utilization(module="module"):
     file = "reports/synthesis_summary.txt"
     if not os.path.exists(file):
@@ -66,3 +66,11 @@ def parse_utilization(module="module"):
 def get_latest_summary():
     df = pd.read_csv("reports/util_summary.csv")
     return df.iloc[0].to_dict()
+def log_to_history(df):
+    history_file = "reports/history.csv"
+    df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if os.path.exists(history_file):
+        pd.read_csv(history_file).append(df).to_csv(history_file, index=False)
+    else:
+        df.to_csv(history_file, index=False)
+
