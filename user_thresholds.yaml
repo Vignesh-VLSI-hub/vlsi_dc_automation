@@ -1,0 +1,8 @@
+Slack: 0.0
+Delay: 1.0
+Power: 0.02
+LUTs: 50                                        #values can be changed on user requirements
+FFs: 100
+DSPs: 10
+BRAM: 5
+IO: 20

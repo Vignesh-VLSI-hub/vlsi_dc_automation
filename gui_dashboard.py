@@ -1,14 +1,11 @@
-import os
-import platform
-import subprocess
-import shutil
-import threading
+import os, platform, subprocess, shutil, threading, glob
 from datetime import datetime
 from tkinter import *
 from tkinter import ttk, filedialog, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scripts import sdc_generator, parse_reports, plot_utilization
-
+import matplotlib
+matplotlib.use("Agg")
 
 class SynthesisDashboard:
     def __init__(self, root):
@@ -80,7 +77,8 @@ class SynthesisDashboard:
             if os.path.exists(f): os.remove(f)
         for d in [".Xil", ".cache"]:
             if os.path.exists(d): shutil.rmtree(d, ignore_errors=True)
-
+        for proj in glob.glob("*_project"):
+            shutil.rmtree(proj, ignore_errors=True)
         os.makedirs("reports", exist_ok=True)
         os.makedirs("plots", exist_ok=True)
 

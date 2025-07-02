@@ -3,12 +3,18 @@ import pandas as pd
 import os
 import re
 import datetime
+import yaml
 def parse_utilization(module="module"):
-    file = "reports/synthesis_summary.txt"
-    if not os.path.exists(file):
-        print("\u274c synthesis_summary.txt not found.")
-        return
+    primary = f"reports/synthesis_summary_{module}.txt"
+    fallback = "reports/synthesis_summary.txt"
 
+    if os.path.exists(primary):
+        file = primary
+    elif os.path.exists(fallback):
+        file = fallback
+    else:
+        print("❌ synthesis_summary.txt not found.")
+        return
     with open(file, encoding="utf-8", errors="ignore") as f:
         lines = f.readlines()
 
@@ -29,8 +35,8 @@ def parse_utilization(module="module"):
             match = re.search(r"(-?\d+\.\d+)ns", line)
             if match:
                 summary["Slack"] = match.group(1)
-        elif "Data Path Delay" in line:
-            match = re.search(r"Data Path Delay:\s+(\d+\.\d+)", line)
+        elif re.search(r"Data Path Delay", line, re.IGNORECASE):
+            match = re.search(r"(\d+\.\d+)", line)
             if match:
                 summary["Delay"] = match.group(1)
         elif "Dynamic (W)" in line:
@@ -66,6 +72,18 @@ def parse_utilization(module="module"):
 def get_latest_summary():
     df = pd.read_csv("reports/util_summary.csv")
     return df.iloc[0].to_dict()
+def compare_to_thresholds(df, yaml_file="thresholds.yaml"):
+    if not os.path.exists(yaml_file):
+        return {}
+    spec = yaml.safe_load(open(yaml_file))
+    verdict = {}
+    for m, goal in spec.items():
+        val = df[m].astype(float).iloc[0]
+        if m == "Slack":                # Slack must be >= goal
+            verdict[m] = val >= goal
+        else:                           # everything else must be <= goal
+            verdict[m] = val <= goal
+    return verdict
 def log_to_history(df):
     history_file = "reports/history.csv"
     df["Timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
